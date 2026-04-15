@@ -189,7 +189,8 @@ species_presence <- species_long %>%
 We can remove some columns: "Num_observers", "All_obs_reported", "Observer_hours" are here to help to compute the effort of observation but since we just want presence and absence, we do not need it. We can also remove all the zeros values to reduce the size of our data set:
 
 ```{r}
-species_presence <- species_presence %>%
+
+#species_presence <- species_presence %>%
   
 
 ```
@@ -197,10 +198,10 @@ species_presence <- species_presence %>%
 Last but not least, let's have a look at our species list
 
 ```{r}
-species_presence %>%
-  filter(species_presence == 1) %>%
-  count(species) %>%
-  arrange(desc(n))
+# species_presence %>%
+#   filter(species_presence == 1) %>%
+#   count(species) %>%
+#   arrange(desc(n))
 ```
 
 We have 319 species observed in this table. The "convention" seems to be that `_` are used to separate the different parts of a name. Note that it is not clear what type of nomenclature reference is used to pull those names from.
@@ -208,11 +209,11 @@ We have 319 species observed in this table. The "convention" seems to be that `_
 Let's write the presence table to a csv file:
 
 ```{r}
-# check if the folder exists
-dir.create(datadir_processed, showWarnings = FALSE)
-
-# write the file
-write_csv(species_presence, file.path(datadir_processed, "species_presence.csv"))
+# # check if the folder exists
+# dir.create(datadir_processed, showWarnings = FALSE)
+# 
+# # write the file
+# write_csv(species_presence, file.path(datadir_processed, "species_presence.csv"))
 ```
 
 

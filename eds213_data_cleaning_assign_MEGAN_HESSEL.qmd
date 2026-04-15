@@ -1,0 +1,189 @@
+---
+title: "eds213 Data Cleaning"
+format: html
+author: "Megan Hessel"
+warning: false
+---
+
+Load Data
+
+```{r}
+#| output: false
+
+# Libraries
+library(tidyverse)
+
+# file names
+datadir_raw <- file.path("data","raw")
+
+datadir_processed <- file.path("data", "processed/")
+
+species_file <- "ASDN_Daily_species.csv"
+
+snowsurvey_file <- "ASDN_Snow_survey.csv"
+
+snowsurvey_csv <- read_csv(file.path(datadir_raw, snowsurvey_file))
+snowsurvey_csv
+```
+
+## Clean `Water_cover` Column
+
+### Dealing with non-numeric values
+
+Look at the non-numeric values
+
+```{r}
+# Investigate the non numeric values 
+snowsurvey_csv %>% 
+  count(Water_cover) %>% 
+  filter(is.na(as.numeric(Water_cover)))
+```
+
+```{r}
+# Change all the non-numeric values 
+snowsurvey_fixed <- snowsurvey_csv %>% 
+  mutate(Water_cover = ifelse(Water_cover == "-", NA, Water_cover), 
+         Water_cover = ifelse(Water_cover == ".", NA, Water_cover),
+         Water_cover = ifelse(Water_cover == "n/a", NA, Water_cover),
+         Water_cover = ifelse(Water_cover == "unk", NA, Water_cover)
+         )
+
+# Check if it worked
+snowsurvey_fixed %>% 
+  count(Water_cover) %>% 
+  filter(is.na(as.numeric(Water_cover)))
+```
+
+```{r}
+# Make the column numeric 
+snowsurvey_fixed$Water_cover <- as.numeric(snowsurvey_fixed$Water_cover)
+```
+
+### Value Ranges
+
+The water cover must range from 0 to 100. Let's look if there are any values outside that range.
+
+```{r}
+unique(snowsurvey_fixed$Water_cover)
+
+# Check values greater than 0 
+snowsurvey_fixed %>% 
+  filter(Water_cover > 100)
+
+# Check for negative values 
+snowsurvey_fixed %>% 
+  filter(Water_cover < 0)
+```
+
+There is a water cover value that is greater than 100 (353%) which is impossible! Need to fix it!
+
+```{r}
+# Change the values greater than 100 to NAs 
+snowsurvey_fixed <- snowsurvey_fixed %>% 
+  mutate(Water_cover = ifelse(Water_cover > 100, NA, Water_cover))
+```
+
+## Clean the `Land_cover` column
+
+### Dealing with non-numeric values
+
+Look at the non-numeric values
+
+```{r}
+# Investigate non numeric values 
+snowsurvey_fixed %>% 
+  count(Land_cover) %>% 
+  filter(is.na(as.numeric(Land_cover)))
+```
+
+Change non-numeric values to NA
+
+```{r}
+# Change non numeric values 
+snowsurvey_fixed <- snowsurvey_fixed %>% 
+  mutate(Land_cover = ifelse(Land_cover == "-", NA, Land_cover), 
+         Land_cover = ifelse(Land_cover == ".", NA, Land_cover), 
+         Land_cover = ifelse(Land_cover == "n/a", NA, Land_cover), 
+         Land_cover = ifelse(Land_cover == "unk", NA, Land_cover))
+
+# Check if it worked 
+snowsurvey_fixed %>% 
+  count(Land_cover) %>% 
+  filter(is.na(as.numeric(Land_cover)))
+
+```
+
+Convert column to numeric
+
+```{r}
+# Change Land_cover to numeric 
+snowsurvey_fixed$Land_cover <- as.numeric(snowsurvey_fixed$Land_cover)
+```
+
+### Value Ranges
+
+Investigate which value are greater than 100 or negative.
+
+```{r}
+# Values greater than 100 
+snowsurvey_fixed %>% 
+  filter(Land_cover > 100)
+
+# Negative values 
+snowsurvey_fixed %>% 
+  filter(Land_cover < 0)
+```
+
+Convert impossible values to NAs
+
+```{r}
+# Convert negative values to NAs 
+snowsurvey_fixed <- snowsurvey_fixed %>% 
+  mutate(Land_cover = ifelse(Land_cover < 0, NA, Land_cover))
+```
+
+## Clean Snow Cover column
+
+We did this in class: non-numeric and impossible values
+
+```{r}
+# Fix the non-numeric values 
+snowsurvey_fixed <- snowsurvey_fixed %>%
+  mutate(Snow_cover = ifelse(Snow_cover == ".", NA, Snow_cover), 
+         Snow_cover = ifelse(Snow_cover == "-", NA, Snow_cover), 
+         Snow_cover = ifelse(Snow_cover == "n/a", NA, Snow_cover), 
+         Snow_cover = ifelse(Snow_cover == "unk", NA, Snow_cover), 
+         Snow_cover = ifelse(Snow_cover == "<1", 0, Snow_cover))
+
+# Make the column numeric 
+snowsurvey_fixed$Snow_cover <- as.numeric(snowsurvey_fixed$Snow_cover)
+
+# Chnage negative, impossible values to NA 
+snowsurvey_fixed <- snowsurvey_fixed %>% 
+  mutate(Snow_cover = ifelse(Snow_cover > 100, NA, Snow_cover))
+
+```
+
+## Total Cover
+
+Recompute the `Total_cover` to ensure 3 snow, water, and land cover value
+
+```{r}
+
+# Recalculate the Total Cover = Sum of snow, water, and land cover
+snowsurvey_fixed <- snowsurvey_fixed %>% 
+  mutate(Total_cover = rowSums(pick(Snow_cover, Water_cover, Land_cover), na.rm = TRUE))
+
+# Look at all total cover values and make sure they are 0 (NAs in rows) or 100
+snowsurvey_fixed$Total_cover
+
+```
+## Export cleaned snowsurvey as CSV
+
+```{r}
+# Check if the folder exists
+dir.create(datadir_processed, showWarnings = FALSE)
+
+# Save file as CSV 
+write_csv(snowsurvey_fixed, file.path(datadir_processed, "all_cover_fixed_MEGAN_HESSEL.csv"))
+```
