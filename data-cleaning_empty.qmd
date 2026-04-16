@@ -121,7 +121,6 @@ No negative value detected ✅
 snowsurvey_fixed <- snowsurvey_fixed %>% 
   mutate(Snow_cover = ifelse(Snow_cover > 100, NA, Snow_cover))
 
-
 ```
 
 

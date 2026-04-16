@@ -38,7 +38,10 @@ snowsurvey_csv %>%
   count(Water_cover) %>% 
   filter(is.na(as.numeric(Water_cover)))
 ```
+There are characters: - . n/a unk
 
+These characters do not tell us any information about the values. 
+Therefore, we must change all the non-numeric values to NAs. 
 ```{r}
 # Change all the non-numeric values 
 snowsurvey_fixed <- snowsurvey_csv %>% 
@@ -54,6 +57,7 @@ snowsurvey_fixed %>%
   filter(is.na(as.numeric(Water_cover)))
 ```
 
+Now that we removed the characters, we can make the column numeric. 
 ```{r}
 # Make the column numeric 
 snowsurvey_fixed$Water_cover <- as.numeric(snowsurvey_fixed$Water_cover)
@@ -75,7 +79,9 @@ snowsurvey_fixed %>%
   filter(Water_cover < 0)
 ```
 
-There is a water cover value that is greater than 100 (353%) which is impossible! Need to fix it!
+There is a water cover value that is greater than 100 (353%) which is impossible! 
+
+We do not know what the value is suppose to be. Therefore, we must convert the impossible data measurement to NA. 
 
 ```{r}
 # Change the values greater than 100 to NAs 
@@ -87,7 +93,7 @@ snowsurvey_fixed <- snowsurvey_fixed %>%
 
 ### Dealing with non-numeric values
 
-Look at the non-numeric values
+Look at the non-numeric values.
 
 ```{r}
 # Investigate non numeric values 
@@ -95,9 +101,10 @@ snowsurvey_fixed %>%
   count(Land_cover) %>% 
   filter(is.na(as.numeric(Land_cover)))
 ```
+There are characters: - . n/a unk
 
-Change non-numeric values to NA
-
+These characters do not tell us any information about the values. 
+Therefore, we must change all the non-numeric values to NAs. 
 ```{r}
 # Change non numeric values 
 snowsurvey_fixed <- snowsurvey_fixed %>% 
@@ -113,8 +120,7 @@ snowsurvey_fixed %>%
 
 ```
 
-Convert column to numeric
-
+Now that the characters are removed, we can convert column to numeric.
 ```{r}
 # Change Land_cover to numeric 
 snowsurvey_fixed$Land_cover <- as.numeric(snowsurvey_fixed$Land_cover)
@@ -134,7 +140,9 @@ snowsurvey_fixed %>%
   filter(Land_cover < 0)
 ```
 
-Convert impossible values to NAs
+There are some negative values which is impossible!
+
+We cannot assume what the values were suppose to be. Therefore, we must convert impossible values to NAs. 
 
 ```{r}
 # Convert negative values to NAs 
@@ -142,9 +150,9 @@ snowsurvey_fixed <- snowsurvey_fixed %>%
   mutate(Land_cover = ifelse(Land_cover < 0, NA, Land_cover))
 ```
 
-## Clean Snow Cover column
+## Clean `Snow Cover` column
 
-We did this in class: non-numeric and impossible values
+We did this in class: fix non-numeric and impossible values by converting them to NAs.  
 
 ```{r}
 # Fix the non-numeric values 
@@ -158,24 +166,35 @@ snowsurvey_fixed <- snowsurvey_fixed %>%
 # Make the column numeric 
 snowsurvey_fixed$Snow_cover <- as.numeric(snowsurvey_fixed$Snow_cover)
 
-# Chnage negative, impossible values to NA 
+# Change negative, impossible values to NA 
 snowsurvey_fixed <- snowsurvey_fixed %>% 
   mutate(Snow_cover = ifelse(Snow_cover > 100, NA, Snow_cover))
 
 ```
 
-## Total Cover
+## Recompute the `Total Cover`
 
-Recompute the `Total_cover` to ensure 3 snow, water, and land cover value
+Ensure the 3 columns (snow, water, and land cover) sum to 100 for each row. 
 
+The metadata said these rows must sum to 100. Therefore, when they did not sum to 100, I removed the row. 
 ```{r}
-
 # Recalculate the Total Cover = Sum of snow, water, and land cover
 snowsurvey_fixed <- snowsurvey_fixed %>% 
   mutate(Total_cover = rowSums(pick(Snow_cover, Water_cover, Land_cover), na.rm = TRUE))
 
-# Look at all total cover values and make sure they are 0 (NAs in rows) or 100
-snowsurvey_fixed$Total_cover
+# Investigate where total_cover != 100
+snowsurvey_fixed %>% 
+  filter(Total_cover != 100) %>% 
+  count()
+
+# Total cover must = 100. Therefore, dropping all values not 100 
+snowsurvey_fixed <- snowsurvey_fixed %>% 
+  filter(Total_cover == 100)
+
+# Make sure it worked 
+snowsurvey_fixed %>% 
+  filter(Total_cover != 100) %>% 
+  count()
 
 ```
 ## Export cleaned snowsurvey as CSV
